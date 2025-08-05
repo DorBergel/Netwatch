@@ -1,74 +1,81 @@
 # NetWatch
 
-NetWatch is a lightweight C-based network statistics monitoring tool. It captures and analyzes raw network packets to provide live statistics on protocol usage and traffic breakdown in real time.
+**NetWatch** is a real-time network monitoring CLI tool written in C, using raw sockets to capture and analyze live traffic on a specified network interface. It features protocol parsing, flow statistics, and a terminal UI with ncurses support.
+
+---
 
 ## Features
 
-- Captures live network traffic using raw sockets
-- Tracks per-protocol statistics (TCP, UDP, ICMP, etc.)
-- Logs packet data to a CSV file for later analysis
-- Clean modular C code with reusable components
-- Simple CLI-based dashboard
+* Capture network packets via **raw sockets** (`AF_PACKET`, `SOCK_RAW`)
+* Parse and count:
 
-## Project Structure
+  * Ethernet
+  * IP (IPv4)
+  * TCP, UDP, ICMP headers
+* Real-time packet counters
+* Ncurses-based **dashboard** UI
+* **Top Flows** section:
 
-```
-netwatch/
-├── Makefile                   # Build instructions
-├── log.csv                    # Log file with captured network data
-├── build/                     # Compiled object files
-├── src/                       # Source files (main logic)
-│   ├── main.c
-│   ├── net_utils.c
-│   └── cli.c
-├── include/                   # Header files
-│   ├── net_utils.h
-│   └── cli.h
-```
+  * Shows IP pairs and their byte counts
+  * **Top talker** in **bold**
+  * **High-bandwidth flows** in **red** (over 10 MB threshold)
+* Command-line filter support: `-f port 53`
 
-## Requirements
-
-- GCC compiler
-- Linux-based system with raw socket access (sudo required)
+---
 
 ## Build Instructions
 
-To compile the project:
-
-```bash
+```sh
 make
 ```
 
-This will build the object files and produce an executable called `netwatch`.
+Make sure you have:
 
-## Run Instructions
+* GCC
+* ncurses development libraries
 
-Run the program with appropriate permissions:
+---
 
-```bash
-sudo ./netwatch
+## Run Example
+
+```sh
+sudo ./netwatch -i enp1s0
 ```
 
-Network statistics will be displayed on the terminal and logged to `log.csv`.
+Optional filter:
 
-## Key Components
+```sh
+sudo ./netwatch -i enp1s0 -f port 53
+```
 
-- `net_utils.c/h`: Handles raw socket setup and packet parsing
-- `cli.c/h`: Manages terminal interface and dashboard output
-- `main.c`: Initializes components and runs the capture loop
+---
 
-## Future Improvements
+## File Structure
 
-- Add support for more detailed packet inspection (DNS, ARP, etc.)
-- Implement filtering and capture controls (e.g., interface selection)
-- Enhance dashboard display using ncurses
-- Export reports in structured formats (JSON, HTML)
+```
+.
+├── src/
+│   ├── main.c              # Entry point
+│   ├── net_utils.c         # Packet capture and parsing logic
+├── include/
+│   └── net_utils.h         # Shared declarations
+├── Makefile
+├── README.md
+```
 
-## License
+---
 
-This project is released for educational and diagnostic use.
+## Notes
 
-## Author
+* Root privileges required to open raw sockets
+* Tested on Linux (kernel 5+)
+* Mac support not available due to `AF_PACKET` usage
 
-Dor Bergel  
-GitHub: [https://github.com/DorBergel](https://github.com/DorBergel)
+---
+
+## TODO
+
+* Export logs to CSV/JSON
+* Improve filtering (e.g., by IP, protocol)
+* Support for multiple interfaces
+* Cross-platform compatibility
