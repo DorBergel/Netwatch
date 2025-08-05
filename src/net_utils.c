@@ -14,9 +14,9 @@
 #include <netinet/ip_icmp.h>
 #include <time.h>
 
-#define DEBUG 0  // gcc -DDEBUG=0 -o netwatch main.c net_utils.c
-
-
+#ifndef DEBUG
+#define DEBUG 0
+#endif
 
 /**
 * Initializes a raw socket bound to all network traffic via a specific interface.
@@ -61,7 +61,7 @@ void close_socket(int socketId) {
 }
 
 
-void capture_packets(int sockId, ProtocolStats *stats, Packet* recent, int* recent_index, FILE* log_pointer, PacketFilter* filter) {
+void capture_packets(int sockId, ProtocolStats *stats, Packet* recent, int* recent_index, FILE* log_pointer, const PacketFilter* filter) {
 	
 	struct ethhdr* eth;
 	struct iphdr* ip;
@@ -87,7 +87,6 @@ void capture_packets(int sockId, ProtocolStats *stats, Packet* recent, int* rece
 		return;
 	}
 	stats->total_bytes += num_bytes;
-	//// parse_eth_header(eth, stats);
 	parse_eth_header(&currentPacket, eth);
 	
 	
@@ -102,7 +101,6 @@ void capture_packets(int sockId, ProtocolStats *stats, Packet* recent, int* rece
 	}
 	// Set ip pointer to buffer with offset
 	ip = (struct iphdr*)(buffer + sizeof(struct ethhdr));
-	//// parse_ip_header(ip, stats);
 	parse_ip_header(&currentPacket, ip);
 	
 	offset = sizeof(struct ethhdr) + (ip->ihl * 4);
@@ -157,7 +155,7 @@ void capture_packets(int sockId, ProtocolStats *stats, Packet* recent, int* rece
 	}
 }
 
-void parse_eth_header(struct Packet* packet, struct ethhdr* eth) {
+void parse_eth_header(Packet* packet, const struct ethhdr* eth) {
 	
 	snprintf(packet->src_mac, sizeof(packet->src_mac),
 			"%02x:%02x:%02x:%02x:%02x:%02x", 
@@ -171,13 +169,13 @@ void parse_eth_header(struct Packet* packet, struct ethhdr* eth) {
 	
 }
 
-void parse_ip_header(struct Packet* packet, struct iphdr* ip) {
+void parse_ip_header(Packet* packet, const struct iphdr* ip) {
 	inet_ntop(AF_INET, &ip->saddr, packet->src_ip, sizeof(packet->src_ip));
 	inet_ntop(AF_INET, &ip->daddr, packet->dest_ip, sizeof(packet->dest_ip)); // Humen read string
 }
 
 
-void parse_tcp_header(struct Packet* packet, struct tcphdr* tcp) {
+void parse_tcp_header(Packet* packet, const struct tcphdr* tcp) {
 	packet->proto = TCP;
 	packet->src_port = ntohs(tcp->source);
 	packet->dest_port = ntohs(tcp->dest);
@@ -200,7 +198,7 @@ void parse_tcp_header(struct Packet* packet, struct tcphdr* tcp) {
 }
 
 
-void parse_udp_header(struct Packet* packet, struct udphdr* udp) {
+void parse_udp_header(Packet* packet, const struct udphdr* udp) {
 	packet->proto = UDP;
 	packet->src_port = ntohs(udp->source);
 	packet->dest_port = ntohs(udp->dest);
@@ -209,7 +207,7 @@ void parse_udp_header(struct Packet* packet, struct udphdr* udp) {
 	
 }
 
-void parse_icmp_header(struct Packet* packet, struct icmphdr* icmp) {
+void parse_icmp_header(Packet* packet, const struct icmphdr* icmp) {
 	
 	packet->proto = ICMP;
 	packet->src_port = 0;
@@ -230,7 +228,7 @@ void parse_icmp_header(struct Packet* packet, struct icmphdr* icmp) {
 
 
 
-void update_connections_table(FlowStats* table, int* connections_count, Packet* curr_pkt, size_t pkt_size) {
+void update_connections_table(FlowStats* table, int* connections_count, const Packet* curr_pkt, size_t pkt_size) {
 
 	for(int i=0; i<(*connections_count); i++) {
 		FlowStats* f = &table[i];

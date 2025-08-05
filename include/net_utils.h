@@ -83,16 +83,16 @@ typedef struct Packet {
 int init_raw_socket(const char *iface);
 void close_socket(int sockfd);
 
-void capture_packets(int sockfd, ProtocolStats *stats, Packet* recent, int* recent_index, FILE* log_pointer, PacketFilter* filter);
+void capture_packets(int sockfd, ProtocolStats *stats, Packet* recent, int* recent_index, FILE* log_pointer, const PacketFilter* filter);
 
-void parse_eth_header(struct Packet* packet, struct ethhdr* eth);
-void parse_ip_header(struct Packet* packet, struct iphdr* );
-void parse_tcp_header(struct Packet* packet, struct tcphdr* tcp);
-void parse_udp_header(struct Packet* packet, struct udphdr* udp);
-void parse_icmp_header(struct Packet* packet, struct icmphdr* icmp);
+void parse_eth_header(Packet* packet, const struct ethhdr* eth);
+void parse_ip_header(Packet* packet, const struct iphdr* ip);
+void parse_tcp_header(Packet* packet, const struct tcphdr* tcp);
+void parse_udp_header(Packet* packet, const struct udphdr* udp);
+void parse_icmp_header(Packet* packet, const struct icmphdr* icmp);
 
 const char* proto_to_str(enum Protocol proto);
-void update_connections_table(FlowStats* table, int* connections_count, struct Packet* curr_pkt, size_t pkt_size);
+void update_connections_table(FlowStats* table, int* connections_count, const Packet* curr_pkt, size_t pkt_size);
 short proto_color(enum Protocol proto);
 
 int compare_by_bytes(const void* a, const void* b);

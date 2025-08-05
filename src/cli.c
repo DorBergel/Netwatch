@@ -184,3 +184,19 @@ void draw_dashboard(const ProtocolStats* stats,
 
     refresh();
 }
+
+void print_usage(const char* prog_name) {
+    printf("Usage: %s [options]\n", prog_name);
+    printf("Options:\n");
+    printf("  -i <interface>     Network interface to listen on (default: enp1s0)\n");
+    printf("  -n <count>         Max number of packets to capture (default: unlimited)\n");
+    printf("  -v                 Verbose packet output\n");
+    printf("  -o <file>          Export packet log to file (CSV format)\n");
+    printf("  -f <filter>        Filter packets. Examples:\n");
+    printf("                       tcp         Only TCP traffic\n");
+    printf("                       udp         Only UDP traffic\n");
+    printf("                       icmp        Only ICMP traffic\n");
+    printf("                       host 8.8.8.8  Traffic to/from 8.8.8.8\n");
+    printf("                       port 53     Traffic on port 53\n");
+    printf("  -h, --help         Show this help message\n");
+}

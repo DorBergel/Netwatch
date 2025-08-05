@@ -1,0 +1,5 @@
+*.o
+build/
+netwatch
+log.csv
+*.log
