@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -86,14 +87,20 @@ void draw_dashboard(const ProtocolStats* stats,
              stats->udp_packets,
              stats->icmp_packets,
              stats->other_packets);
+    mvprintw(3, 0, "Bandwidth: TCP: %.2f kbps  UDP: %.2f kbps  ICMP: %.2f kbps",
+             stats->tcp_bandwidth_kbps,
+             stats->udp_bandwidth_kbps,
+             stats->icmp_bandwidth_kbps);
     attroff(A_BOLD);
 
+    
+
     // Separator under header/stats
-    mvhline(3, 0, 0, COLS);
+    mvhline(4, 0, 0, COLS);
 
     // ----- Recent Packets -----
-    mvprintw(4, 0, "Recent Packets (latest first):");
-    mvhline(5, 0, 0, COLS);
+    mvprintw(5, 0, "Recent Packets (latest first):");
+    mvhline(6, 0, 0, COLS);
 
     int total = *recent_index;
     if (total > MAX_COUNT) total = MAX_COUNT;
@@ -102,7 +109,7 @@ void draw_dashboard(const ProtocolStats* stats,
     if (total > max_lines) total = max_lines;
 
     int start = (*recent_index - total + MAX_COUNT) % MAX_COUNT;
-    int line = 6;
+    int line = 7;
 
     // Print aligned columns
     for (int i = 0; i < total; i++) {
@@ -111,7 +118,7 @@ void draw_dashboard(const ProtocolStats* stats,
 
         short color = proto_color(p->proto);
         attron(COLOR_PAIR(color));
-
+        
         if (verbose) {
             mvprintw(line++, 0,
                      "%-4s %-15s:%-5d -> %-15s:%-5d (MAC %-17s -> %-17s) [%s]",
@@ -135,6 +142,8 @@ void draw_dashboard(const ProtocolStats* stats,
     // Separator before top connections
     mvhline(line++, 0, 0, COLS);
 
+    qsort(connections, conn_count, sizeof(FlowStats), compare_by_bytes);
+
     // ----- Top Connections -----
     mvprintw(line++, 0, "Top Connections (by packets):");
 
@@ -145,14 +154,31 @@ void draw_dashboard(const ProtocolStats* stats,
         FlowStats *f = &connections[i];
         short color = proto_color(f->proto);
         attron(COLOR_PAIR(color));
+        
+        if(f->bandwidth_kbps > HIGH_BANDWIDTH_THRESHOLD) {
+            attron(COLOR_PAIR(10)); // Use your red color pair number
+        }
+
+        // Bold the first line
+        if (i == 0) {
+            attron(A_BOLD);
+        }
 
         mvprintw(line++, 0,
-                 "%-4s %-15s:%-5d -> %-15s:%-5d  pkts=%-6lu bytes=%-8lu",
+                 "%s %s:%d -> %s:%d  pkts=%lu bytes=%lu bandwidth=%.2f kbps",
                  proto_to_str(f->proto),
                  f->src_ip, f->src_port,
                  f->dest_ip, f->dest_port,
-                 f->packets, f->bytes);
+                 f->packets, f->bytes,
+                 f->bandwidth_kbps);
 
+
+        if(f->bandwidth_kbps > HIGH_BANDWIDTH_THRESHOLD) {
+            attroff(COLOR_PAIR(10));
+        }
+        if (i == 0) {
+            attroff(A_BOLD);
+        }
         attroff(COLOR_PAIR(color));
     }
 

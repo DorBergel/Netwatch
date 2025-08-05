@@ -43,6 +43,7 @@ int main(int argc, char** argv)
 	Packet recent[MAX_RECENT];
 	int recent_index = 0;
 	FILE* log_pointer = NULL;
+	PacketFilter filter = {.type = FILTER_NONE };
 	
 	signal(SIGINT, signal_handler);
 
@@ -59,7 +60,26 @@ int main(int argc, char** argv)
 		} else if(strcmp(argv[i], "-o") == 0) {
 			log_filename = argv[++i];
 		}
-		else {
+		else if(strcmp(argv[i], "-f") == 0 && i+1 < argc) {
+			char* expr = argv[++i];
+			if(strcmp(expr, "tcp") == 0) {
+				filter.type = FILTER_PROTO;
+				filter.proto = TCP;
+			} else if(strcmp(expr, "udp") == 0) {
+				filter.type = FILTER_PROTO;
+				filter.proto = UDP;
+			} else if(strcmp(expr, "icmp") == 0) {
+				filter.type = FILTER_PROTO;
+				filter.proto = ICMP;
+			} else if(strcmp(expr, "host") == 0 && i+1 < argc) {
+				filter.type = FILTER_HOST;
+				strncpy(filter.ip, argv[++i], INET_ADDRSTRLEN);
+			} else if(strcmp(expr, "port") == 0 && i+1 < argc) {
+				filter.type = FILTER_PORT;
+				filter.port = atoi(argv[++i]);
+			} else {
+				printf("Unknown filter expression: %s\n", expr);
+			}
 			printf("Unknown options %s\n", argv[i]);
 		}
 	}
@@ -70,8 +90,8 @@ int main(int argc, char** argv)
 			perror("Failed to open log file");
 			exit(1);
 		}
-		
-		fprintf(log_pointer, "Protocol,SrcIP,SrcPort,DestIP,DestPort,Extra,Bytes\n");
+
+		fprintf(log_pointer, "Protocol,SrcIP,SrcPort,DestIP,DestPort,Extra,Bytes,Bandwidth\n");
 		fflush(log_pointer);
 	}
 	
@@ -93,7 +113,7 @@ int main(int argc, char** argv)
 	}
 	
 	while(max_packets == -1 || stats.total_packets < max_packets) {
-		capture_packets(sockId, &stats, recent, &recent_index, log_pointer);
+		capture_packets(sockId, &stats, recent, &recent_index, log_pointer, &filter);
 		draw_dashboard(&stats, recent, &recent_index, MAX_RECENT, verbose, connections, conn_count);
 		
 		if(getch() == 'q') break;
